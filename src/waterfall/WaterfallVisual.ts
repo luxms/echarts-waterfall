@@ -4,6 +4,7 @@ import { extend } from "zrender/lib/core/util.js";
 
 const positiveColorQuery = ["itemStyle", "color"];
 const negativeColorQuery = ["itemStyle", "color0"];
+const subtotalColorQuery = ["itemStyle", "color1"];
 
 // @ts-ignore
 function createWaterfallVisual(ecModel, api) {
@@ -15,6 +16,7 @@ function createWaterfallVisual(ecModel, api) {
       legendSymbol: "roundRect",
       colorP: getColor(1, seriesModel),
       colorN: getColor(-1, seriesModel),
+      colorS: getColor(0, seriesModel),
     }); // Only visible series has each data be visual encoded
 
     if (ecModel.isSeriesFiltered(seriesModel)) {
@@ -23,22 +25,21 @@ function createWaterfallVisual(ecModel, api) {
 
     !isLargeRender && progress();
 
-    // @ts-ignore
     function progress() {
-      let dataIndex = 0;
-      while (dataIndex !== 4) {
-        const itemModel = data.getItemModel(dataIndex);
-        const sign = data.getItemLayout(dataIndex).sign;
+      data.each((idx: number) => {
+        const itemModel = data.getItemModel(idx);
+        const isSubtotal = itemModel.option.isSubtotal;
+        const sign = data.getItemLayout(idx).sign;
         const style = itemModel.getItemStyle();
-        style.fill = getColor(sign, itemModel);
-        const existsStyle = data.ensureUniqueItemVisual(dataIndex, "style");
+        style.fill = getColor(isSubtotal ? 0 : sign, itemModel);
+        const existsStyle = data.ensureUniqueItemVisual(idx, "style");
         extend(existsStyle, style);
-        dataIndex++;
-      }
+      })
     }
 
     // @ts-ignore
     function getColor(sign, model) {
+      if (sign === 0) return model.get(subtotalColorQuery)
       return model.get(sign > 0 ? positiveColorQuery : negativeColorQuery);
     }
   });

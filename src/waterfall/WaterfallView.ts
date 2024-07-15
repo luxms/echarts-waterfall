@@ -52,8 +52,7 @@ echarts.extendChartView({
         }
       })
       .update(function (newIdx, oldIdx) {
-        debugger; // при ресазе меняется только один столбик!
-        let el = oldData.getItemGraphicEl(oldIdx) as NormalBoxPath;
+        let el = oldData.getItemGraphicEl(oldIdx);
         if (!data.hasValue(newIdx)) {
           group.remove(el);
           return;
@@ -213,11 +212,6 @@ class NormalBoxPath extends Path<any> {
       ctx.lineTo(ends[2][0], ends[2][1]);
       ctx.lineTo(ends[3][0], ends[3][1]);
       ctx.closePath();
-
-      // ctx.moveTo(ends[4][0], ends[4][1]);
-      // ctx.lineTo(ends[5][0], ends[5][1]);
-      // ctx.moveTo(ends[6][0], ends[6][1]);
-      // ctx.lineTo(ends[7][0], ends[7][1]);
     }
   }
 }
@@ -264,4 +258,23 @@ export function setStatesStylesFromModel(
       ? getter(model)
       : model[defaultStyleGetterMap[styleType]]();
   }
+}
+
+
+const innerUniqueIndex = getRandomIdBase();
+function saveOldStyle(el) {
+  transitionStore(el).oldStyle = el.style;
+}
+function getOldStyle(el) {
+  return transitionStore(el).oldStyle;
+}
+const transitionStore = makeInner();
+function getRandomIdBase() {
+  return Math.round(Math.random() * 9);
+}
+function makeInner() {
+  const key = '__ec_inner_' + innerUniqueIndex + 1;
+  return function (hostObj) {
+    return hostObj[key] || (hostObj[key] = {});
+  };
 }

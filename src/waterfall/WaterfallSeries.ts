@@ -32,12 +32,9 @@ const WaterfallSeries = echarts.extendSeriesModel({
     layout: null,
     clip: true,
     itemStyle: {
-      // можно добавить цвет подытога
-      color: "#eb5454",
-      color0: "#47b262",
-      // borderColor: "#eb5454",
-      // borderColor0: "#47b262",
-      // borderColorDoji: null,
+      color: "green",
+      color0: "red",
+      color1: "blue",
       borderWidth: 1,
     },
     emphasis: {

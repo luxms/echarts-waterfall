@@ -25,49 +25,40 @@ echarts.registerLayout(function (ecModel, api) {
     );
     const openDimI = vDimsI[0];
     const closeDimI = vDimsI[1];
-    // const lowestDimI = vDimsI[2];
-    // const highestDimI = vDimsI[3];
 
     data.setLayout({
       candleWidth: candleWidth,
       isSimpleBox: candleWidth <= 1.3,
     });
 
-    // if (cDimI < 0 || vDimsI.length < 4) return;
     if (cDimI < 0 || vDimsI.length < 2) return;
 
     seriesModel.pipelineContext.large ? null : normalProgress();
 
+    
     function normalProgress() {
-      let dataIndex = 0;
       const store = data.getStore();
-      while (dataIndex !== 4) {
-        const axisDimVal = store.get(cDimI, dataIndex);
-        const openVal = store.get(openDimI, dataIndex);
-        const closeVal = store.get(closeDimI, dataIndex);
-        // const lowestVal = store.get(lowestDimI, dataIndex);
-        // const highestVal = store.get(highestDimI, dataIndex);
+      data.each((idx: number) => {
+        const axisDimVal = store.get(cDimI, idx);
+        const openVal = store.get(openDimI, idx);
+        const closeVal = store.get(closeDimI, idx);
         const ocLow = Math.min(openVal, closeVal);
         const ocHigh = Math.max(openVal, closeVal);
         const ocLowPoint = getPoint(ocLow, axisDimVal);
         const ocHighPoint = getPoint(ocHigh, axisDimVal);
-        // const lowestPoint = getPoint(lowestVal, axisDimVal);
-        // const highestPoint = getPoint(highestVal, axisDimVal);
         const ends: any[] = [];
         addBodyEnd(ends, ocHighPoint, 0);
         addBodyEnd(ends, ocLowPoint, 1);
         ends.push(
-          // subPixelOptimizePoint(highestPoint),
           subPixelOptimizePoint(ocHighPoint),
-          // subPixelOptimizePoint(lowestPoint),
           subPixelOptimizePoint(ocLowPoint)
         );
-        const itemModel = data.getItemModel(dataIndex);
+        const itemModel = data.getItemModel(idx);
         const hasDojiColor = !!itemModel.get(["itemStyle", "borderColorDoji"]);
-        data.setItemLayout(dataIndex, {
+        data.setItemLayout(idx, {
           sign: getSign(
             store,
-            dataIndex,
+            idx,
             openVal,
             closeVal,
             closeDimI,
@@ -76,11 +67,10 @@ echarts.registerLayout(function (ecModel, api) {
           initBaseline:
             openVal > closeVal ? ocHighPoint[vDimIdx] : ocLowPoint[vDimIdx],
           ends: ends,
-          // brushRect: makeBrushRect(lowestVal, highestVal, axisDimVal),
           brushRect: makeBrushRect(ocLow, ocHigh, axisDimVal),
         });
-        dataIndex++;
-      }
+      })
+
       function getPoint(val: any, axisDimVal: any) {
         var p = [];
         p[cDimIdx] = axisDimVal;

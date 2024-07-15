@@ -7,33 +7,35 @@ const chart = echarts.init(document.getElementById("main"), null, {
 });
 chart.setOption({
   xAxis: {
-    data: ["2017-10-24", "2017-10-25", "2017-10-26", "2017-10-27"],
+    data: ["2017-10-24", "2017-10-25", "2017-10-26", "2017-10-27", "2017-10-28"],
     axisLine: { onZero: false }
   },
   yAxis: {
     // startValue: -40
-    min: -40, // как будто нет разницы
+    // min: -40, // как будто нет разницы
   },
   series: [
     {
       clip: false,
       type: "waterfall",
       itemStyle: {
-        color: "#eb5454",
-        color0: "#47b262",
+        color: "#47b262",
+        color0: "#eb5454",
+        color1: "#219ebc",
       },
-      // data: [
-      //   { value: [20, 34], itemStyle: { color: "red" } },
-      //   { value: [40, 35], itemStyle: { color: "purple" } },
-      //   { value: [31, 38], itemStyle: { color: "yellow" } },
-      //   { value: [38, 15], itemStyle: { color: "green" } },
-      // ],
       data: [
-        [-20, 34],
-        [40, 35],
-        [0, 38],
-        [38, 15],
+        { value: [0, 34], itemStyle: { color: null }, isSubtotal: true },
+        { value: [34, 50] },
+        { value: [50, 30] },
+        { value: [30, 0], isSubtotal: true },
+        { value: [30, 46] },
       ],
+      // data: [
+      //   [-20, 34],
+      //   [40, 35],
+      //   [0, 38],
+      //   [38, 15],
+      // ],
     },
   ],
 });
