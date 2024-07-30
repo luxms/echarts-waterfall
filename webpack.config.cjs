@@ -14,12 +14,17 @@ module.exports = (env, options) => {
     },
     devtool: 'source-map',
     externals: {
-      'echarts/lib/echarts': 'echarts',
-      'zrender/lib/core/util': 'zrender',
-      'zrender/lib/core': 'zrender',
-      'zrender': 'zrender',
-      'zrender/lib/core/platform.js': 'zrender/lib/core/platform.js',
-      './node_modules/zrender/lib/core/matrix.js': './node_modules/zrender/lib/core/matrix.js'
+      'echarts/lib/echarts': 'echarts/lib/echarts',
+      'zrender/lib/core/util': 'zrender/lib/core/util',
+      'zrender/lib/graphic/helper/subPixelOptimize': 'zrender/lib/graphic/helper/subPixelOptimize',
+      'zrender/lib/core': 'zrender/lib/core',
+      'zrender/lib/graphic/Path': 'zrender/lib/graphic/Path',
+      'zrender/lib/core/platform': 'zrender/lib/core/platform',
+      'echarts/lib/data': 'echarts/lib/data',
+      'echarts/lib/chart/helper/labelHelper': 'echarts/lib/chart/helper/labelHelper',
+      'echarts/lib/label/labelStyle': 'echarts/lib/label/labelStyle',
+      'echarts/lib/chart/helper/whiskerBoxCommon': 'echarts/lib/chart/helper/whiskerBoxCommon',
+      'echarts/lib/util/states': 'echarts/lib/util/states',
     }
   };
 };

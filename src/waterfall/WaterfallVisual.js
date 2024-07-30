@@ -1,4 +1,4 @@
-import { extend } from 'zrender/lib/core/util.js';
+import { extend } from 'zrender/lib/core/util';
 
 const positiveColorQuery = ['itemStyle', 'colorPositive'];
 const negativeColorQuery = ['itemStyle', 'colorNegative'];
@@ -7,7 +7,7 @@ const subtotalColorQuery = ['itemStyle', 'colorSubtotal'];
 function WaterfallVisual(ecModel) {
   ecModel.eachSeriesByType('waterfall', function (seriesModel) {
     const data = seriesModel.getData();
-    const isLargeender = seriesModel.pipelineContext.large;
+    const isLargeRender = seriesModel.pipelineContext.large;
 
     data.setVisual({
       legendSymbol: 'roundRect',
