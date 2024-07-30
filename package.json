@@ -1,8 +1,8 @@
 {
   "name": "echarts-waterfall",
   "description": "Waterfall extension for Echarts",
-  "main": "src/waterfall/index.js",
-    "author": "Sofya Shakirova",
+  "main": "index.js",
+  "author": "Sofya Shakirova",
   "license": "ISC",
   "private": true,
   "version": "1.0.0",
