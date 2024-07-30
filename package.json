@@ -4,7 +4,7 @@
   "main": "index.js",
   "author": "Sofya Shakirova",
   "license": "ISC",
-  "private": true,
+  "private": false,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -16,7 +16,7 @@
     "typescript": "^5.2.2",
     "vite": "^5.3.1"
   },
-  "dependencies": {
+  "peerDependencies": {
     "echarts": "^5.5.1",
     "zrender": "^5.6.0"
   },

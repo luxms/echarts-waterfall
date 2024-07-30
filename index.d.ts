@@ -1,5 +1,3 @@
-import echarts from 'echarts';
-
 interface WordCloudTextStyle {
   color?: string;
   fontStyle?: string;
