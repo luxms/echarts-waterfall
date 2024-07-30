@@ -1,17 +1,6 @@
-// @ts-nocheck
 import { WhiskerBoxCommonMixin } from 'echarts/lib/chart/helper/whiskerBoxCommon';
 import { SeriesModel, helper, List } from 'echarts/lib/echarts';
 import { mixin } from 'zrender/lib/core/util';
-
-interface IWaterfallOption {
-  itemStyle: {
-    colorPositive: string;
-    colorNegative: string;
-    colorSubtotal: string;
-  };
-  isSubtotal: boolean;
-  //label: SeriesLabelOption;
-}
 
 const WaterfallSeries = SeriesModel.extend({
   type: 'series.waterfall',

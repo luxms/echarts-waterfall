@@ -1,4 +1,3 @@
-// @ts-nocheck
 import * as zrUtil from 'zrender/lib/core/util';
 import { map, retrieve2 } from 'zrender/lib/core/util';
 import { subPixelOptimize } from 'zrender/lib/graphic/helper/subPixelOptimize';
@@ -37,7 +36,7 @@ function WaterfallLayout(ecModel) {
 
     function normalProgress() {
       const store = data.getStore();
-      data.each((idx: number) => {
+      data.each((idx) => {
         const axisDimVal = store.get(cDimI, idx); // индекс столбика
         const startVal = store.get(startDimI, idx); // значение начала стобика
         const endVal = store.get(endDimI, idx); // значение конца стобика
@@ -45,7 +44,7 @@ function WaterfallLayout(ecModel) {
         const ocHigh = Math.max(startVal, endVal); // большее значение
         const ocLowPoint = getPoint(ocLow, axisDimVal); // x - центр столбика, y - нижнее значение
         const ocHighPoint = getPoint(ocHigh, axisDimVal); // x - центр столбика, y - верхнее значение
-        const ends: any[] = [];
+        const ends = [];
 
         const nextIds = idx + 1;
         const nextAxisDimVal = store.get(cDimI, nextIds);
@@ -81,20 +80,20 @@ function WaterfallLayout(ecModel) {
           brushRect: makeBrushRect(ocLow, ocHigh, axisDimVal),
         });
       });
-      function getPoint(val: any, axisDimVal: any) {
+      function getPoint(val, axisDimVal) {
         const p = [];
         p[cDimIdx] = axisDimVal; // 0
         p[vDimIdx] = val; // 0
         return isNaN(axisDimVal) || isNaN(val) ? [NaN, NaN] : coordSys.dataToPoint(p);
       }
-      function addBodyEnd(point: any, start: any) {
+      function addBodyEnd(point, start) {
         const point1 = point.slice();
         const point2 = point.slice();
         point1[cDimIdx] = subPixelOptimize(point1[cDimIdx] + barWidth / 2, 1, false);
         point2[cDimIdx] = subPixelOptimize(point2[cDimIdx] - barWidth / 2, 1, true);
         return start ? [point1, point2] : [point2, point1];
       }
-      function makeBrushRect(lowestVal: any, highestVal: any, axisDimVal: any) {
+      function makeBrushRect(lowestVal, highestVal, axisDimVal) {
         var pmin = getPoint(lowestVal, axisDimVal);
         var pmax = getPoint(highestVal, axisDimVal);
         pmin[cDimIdx] -= barWidth / 2;
@@ -106,7 +105,7 @@ function WaterfallLayout(ecModel) {
           height: vDimIdx ? pmax[1] - pmin[1] : barWidth,
         };
       }
-      function subPixelOptimizePoint(point: number[]) {
+      function subPixelOptimizePoint(point) {
         point[cDimIdx] = subPixelOptimize(point[cDimIdx], 1);
         return point;
       }
@@ -114,7 +113,7 @@ function WaterfallLayout(ecModel) {
   });
 }
 
-const getValueAxisStart = (baseAxis: any, valueAxis: any) => {
+const getValueAxisStart = (baseAxis, valueAxis) => {
   let startValue = valueAxis.model.get('startValue');
   if (!startValue) {
     startValue = 0;
@@ -169,7 +168,7 @@ function calculateBarWidth(seriesModel, data) {
       Math.max(Math.min(bandWidth / 2, barMaxWidth), barMinWidth);
 }
 
-function parsePercent(percent: number | string, all: number): number {
+function parsePercent(percent, all) {
   switch (percent) {
     case 'center':
     case 'middle':
@@ -195,7 +194,7 @@ function parsePercent(percent: number | string, all: number): number {
   return percent == null ? NaN : +percent;
 }
 
-function _trim(str: string): string {
+function _trim(str) {
   return str.replace(/^\s+|\s+$/g, '');
 }
 

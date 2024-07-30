@@ -1,23 +1,25 @@
 {
   "name": "echarts-waterfall",
+  "version": "1.0.0",
   "description": "Waterfall extension for Echarts",
   "main": "index.js",
   "author": "Sofya Shakirova",
   "license": "ISC",
-  "private": false,
-  "version": "1.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "devDependencies": {
-    "typescript": "^5.2.2",
-    "vite": "^5.3.1"
+    "dev": "npx webpack --mode development --watch",
+    "build": "npx webpack --mode development",
+    "release": "npx webpack --mode production && npx webpack --mode development"
   },
   "peerDependencies": {
     "echarts": "^5.5.1",
+    "zrender": "^5.6.0"
+  },
+  "devDependencies": {
+    "echarts": "^5.5.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.5.4",
+    "webpack": "^5.11.1",
+    "webpack-cli": "^4.3.1",
     "zrender": "^5.6.0"
   },
   "repository": {

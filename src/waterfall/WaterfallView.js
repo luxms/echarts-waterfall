@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ChartView, graphic } from 'echarts/lib/echarts';
 import * as zrUtil from 'zrender/lib/core/util';
 import Path from 'zrender/lib/graphic/Path';
@@ -113,7 +112,7 @@ const WaterfallView = ChartView.extend({
 
           const labelEl = el.getTextContent();
 
-          setLabelValueAnimation(labelEl, labelStatesModels, seriesModel.getRawValue(newIdx), (value: number) =>
+          setLabelValueAnimation(labelEl, labelStatesModels, seriesModel.getRawValue(newIdx), (value) =>
             getDefaultInterpolatedLabel(data, value)
           );
 
@@ -207,7 +206,7 @@ const WaterfallView = ChartView.extend({
   },
 });
 
-function isNormalBoxClipped(clipArea: any, itemLayout: any) {
+function isNormalBoxClipped(clipArea, itemLayout) {
   let clipped = true;
   for (let i = 0; i < itemLayout.ends.length; i++) {
     // If any point are in the region.
@@ -219,21 +218,21 @@ function isNormalBoxClipped(clipArea: any, itemLayout: any) {
   return clipped;
 }
 
-export function initProps(el: any, props: any, animatableModel?: any, dataIndex?: any, cb?: any, during?: any) {
+export function initProps(el, props, animatableModel, dataIndex, cb, during) {
   animateOrSetProps('enter', el, props, animatableModel, dataIndex, cb, during);
 }
 
-function animateOrSetProps<Props>(
-  animationType: 'enter' | 'update' | 'leave',
-  el: any,
-  props: any,
-  animatableModel?: any,
-  dataIndex?: any,
-  cb?: any,
-  during?: any
+function animateOrSetProps(
+  animationType,
+  el,
+  props,
+  animatableModel,
+  dataIndex,
+  cb,
+  during
 ) {
   let isFrom = false;
-  let removeOpt: any;
+  let removeOpt;
   if (isFunction(dataIndex)) {
     during = cb;
     cb = dataIndex;
@@ -256,10 +255,10 @@ function animateOrSetProps<Props>(
   const animationConfig = getAnimationConfig(
     animationType,
     animatableModel,
-    dataIndex as number,
+    dataIndex,
     isRemove ? removeOpt || {} : null,
     animatableModel && animatableModel.getAnimationDelayParams
-      ? animatableModel.getAnimationDelayParams(el, dataIndex as number)
+      ? animatableModel.getAnimationDelayParams(el, dataIndex)
       : null
   );
   if (animationConfig && animationConfig.duration > 0) {
@@ -267,9 +266,9 @@ function animateOrSetProps<Props>(
     const animationDelay = animationConfig.delay;
     const animationEasing = animationConfig.easing;
 
-    const animateConfig: ElementAnimateConfig = {
-      duration: duration as number,
-      delay: (animationDelay as number) || 0,
+    const animateConfig = {
+      duration: duration,
+      delay: (animationDelay) || 0,
       easing: animationEasing,
       done: cb,
       force: !!cb || !!during,
@@ -287,11 +286,11 @@ function animateOrSetProps<Props>(
     !isFrom && el.attr(props);
     // Call during at least once.
     during && during(1);
-    cb && (cb as AnimateOrSetPropsOption['cb'])();
+    cb && (cb)();
   }
 }
 
-function createNormalBox(itemLayout, dataIndex, isInit?) {
+function createNormalBox(itemLayout, dataIndex, isInit) {
   const ends = itemLayout.ends;
   const res = new NormalBoxPath({
     shape: {
@@ -303,11 +302,11 @@ function createNormalBox(itemLayout, dataIndex, isInit?) {
   return res;
 }
 
-class NormalBoxPath extends Path<any> {
-  readonly type = 'waterfallBar';
+class NormalBoxPath extends Path {
+ type = 'waterfallBar';
   // public shape: object;
 
-  constructor(opts?: any) {
+  constructor(opts) {
     super(opts);
   }
 
@@ -325,10 +324,10 @@ class NormalBoxPath extends Path<any> {
   }
 }
 
-class BBBPath extends Path<any> {
-  readonly type = 'waterfallLine';
+class BBBPath extends Path {
+  type = 'waterfallLine';
 
-  constructor(opts?: any) {
+  constructor(opts) {
     super(opts);
   }
 
@@ -344,10 +343,10 @@ class BBBPath extends Path<any> {
 }
 
 class NormalBoxPathShape {
-  points: number[][];
+  points;
 }
 
-function transInit(points: number[][], itemLayout) {
+function transInit(points, itemLayout) {
   return zrUtil.map(points, function (point) {
     point = point.slice();
     point[1] = itemLayout.initBaseline;
@@ -355,7 +354,7 @@ function transInit(points: number[][], itemLayout) {
   });
 }
 
-function setBoxCommon(el, data, dataIndex: number, isSimpleBox?: boolean) {
+function setBoxCommon(el, data, dataIndex, isSimpleBox) {
   // const itemModel = data.getItemModel(dataIndex);
   // el.style.strokeNoScale = true;
   // el.__simpleBox = isSimpleBox;
@@ -370,12 +369,12 @@ function setBoxCommon(el, data, dataIndex: number, isSimpleBox?: boolean) {
 }
 
 const OTHER_STATES = ['emphasis', 'blur', 'select'];
-const defaultStyleGetterMap: any = {
+const defaultStyleGetterMap = {
   itemStyle: 'getItemStyle',
   lineStyle: 'getLineStyle',
   areaStyle: 'getAreaStyle',
 };
-export function setStatesStylesFromModel(el, itemModel, styleType?: string, getter?: (model) => any) {
+export function setStatesStylesFromModel(el, itemModel, styleType, getter) {
   styleType = styleType || 'itemStyle';
   for (let i = 0; i < OTHER_STATES.length; i++) {
     const stateName = OTHER_STATES[i];

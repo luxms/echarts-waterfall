@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { extend } from 'zrender/lib/core/util.js';
 
 const positiveColorQuery = ['itemStyle', 'colorPositive'];
@@ -8,7 +7,7 @@ const subtotalColorQuery = ['itemStyle', 'colorSubtotal'];
 function WaterfallVisual(ecModel) {
   ecModel.eachSeriesByType('waterfall', function (seriesModel) {
     const data = seriesModel.getData();
-    const isLargeRender = seriesModel.pipelineContext.large;
+    const isLargeender = seriesModel.pipelineContext.large;
 
     data.setVisual({
       legendSymbol: 'roundRect',
@@ -22,7 +21,7 @@ function WaterfallVisual(ecModel) {
     !isLargeRender && progress();
 
     function progress() {
-      data.each((idx: number) => {
+      data.each((idx) => {
         const itemModel = data.getItemModel(idx);
         const isSubtotal = itemModel.option.isSubtotal;
         const sign = data.getItemLayout(idx).sign;
