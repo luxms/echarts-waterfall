@@ -1,30 +1,32 @@
 // @ts-nocheck
-import * as echarts from "echarts/lib/echarts";
-import * as zrUtil from "zrender/src/core/util";
-import Path from "zrender/lib/graphic/Path";
-import * as graphic from "../util/graphic";
+import { ChartView, graphic } from 'echarts/lib/echarts';
+import * as zrUtil from 'zrender/lib/core/util';
+import Path from 'zrender/lib/graphic/Path';
+import { getDefaultLabel, getDefaultInterpolatedLabel } from 'echarts/lib/chart/helper/labelHelper';
+import { setLabelStyle, getLabelStatesModels, setLabelValueAnimation, labelInner } from 'echarts/lib/label/labelStyle';
+import { toggleHoverEmphasis } from 'echarts/lib/util/states';
 
-echarts.extendChartView({
-  type: "waterfall",
+const WaterfallView = ChartView.extend({
+  type: 'waterfall',
 
-  render: function (seriesModel, ecModel, api) {
-    seriesModel.pipelineContext.large ? null : this._renderNormal(seriesModel);
+  render: function (seriesModel) {
+    this._renderNormal(seriesModel);
   },
 
   remove: function () {
     this.group.removeAll();
-    this._model.layoutInstance.dispose();
-  },
-
-  dispose: function () {
-    this._model.layoutInstance.dispose();
   },
 
   _renderNormal(seriesModel) {
     const data = seriesModel.getData();
     const oldData = this._data;
     const group = this.group;
-    const isSimpleBox = data.getLayout("isSimpleBox");
+    const isSimpleBox = data.getLayout('isSimpleBox');
+    const septum = seriesModel.get('septum', true);
+
+    const needsClip = seriesModel.get('clip', true);
+    const coord = seriesModel.coordinateSystem;
+    const clipArea = coord.getArea && coord.getArea();
 
     if (!this._data) {
       group.removeAll();
@@ -35,7 +37,22 @@ echarts.extendChartView({
       .add(function (newIdx) {
         if (data.hasValue(newIdx)) {
           const itemLayout = data.getItemLayout(newIdx);
-          const el = createNormalBox(itemLayout, newIdx, true);
+          const nextItemLayout = data.getItemLayout(newIdx + 1);
+
+          if (needsClip && isNormalBoxClipped(clipArea, itemLayout)) {
+            return;
+          }
+
+          // const el = createNormalBox(itemLayout, newIdx, true);
+          const elGroup = new graphic.Group();
+
+          const el = new NormalBoxPath({
+            shape: {
+              points: itemLayout.ends,
+            },
+            z2: 100,
+          });
+
           graphic.initProps(
             el,
             {
@@ -46,23 +63,96 @@ echarts.extendChartView({
             seriesModel,
             newIdx
           );
+
+          elGroup.add(el);
+
           setBoxCommon(el, data, newIdx, isSimpleBox);
-          group.add(el);
-          data.setItemGraphicEl(newIdx, el);
+
+          if (nextItemLayout && septum.show) {
+            const line = new graphic.Line({
+              shape: {
+                x1: itemLayout.ends[4][0],
+                y1: itemLayout.ends[4][1],
+                x2: itemLayout.ends[5][0],
+                y2: itemLayout.ends[5][1],
+              },
+              silent: true,
+              style: {
+                lineDash: septum.dashed ? [3] : null,
+                stroke: '#9C9C9C',
+              },
+            });
+            graphic.initProps(
+              line,
+              {
+                shape: {
+                  x1: itemLayout.ends[4][0],
+                  y1: itemLayout.ends[4][1],
+                  x2: itemLayout.ends[5][0],
+                  y2: itemLayout.ends[5][1],
+                },
+              },
+              seriesModel,
+              newIdx
+            );
+            elGroup.add(line);
+          }
+
+          const style = data.getItemVisual(newIdx, 'style');
+          const itemModel = data.getItemModel(newIdx);
+          const labelStatesModels = getLabelStatesModels(itemModel);
+
+          setLabelStyle(el, labelStatesModels, {
+            labelFetcher: seriesModel,
+            labelDataIndex: newIdx,
+            defaultText: getDefaultLabel(data, newIdx),
+            inheritColor: style.fill,
+            defaultOpacity: style.opacity,
+            defaultOutsidePosition: false,
+          });
+
+          const labelEl = el.getTextContent();
+
+          setLabelValueAnimation(labelEl, labelStatesModels, seriesModel.getRawValue(newIdx), (value: number) =>
+            getDefaultInterpolatedLabel(data, value)
+          );
+
+          el.useStyle(style);
+          const emphasisModel = itemModel.getModel(['emphasis']);
+          setStatesStylesFromModel(el, itemModel);
+
+          toggleHoverEmphasis(
+            el,
+            emphasisModel.get('focus'),
+            emphasisModel.get('blurScope'),
+            emphasisModel.get('disabled')
+          );
+
+          group.add(elGroup);
+          data.setItemGraphicEl(newIdx, elGroup);
         }
       })
       .update(function (newIdx, oldIdx) {
         let el = oldData.getItemGraphicEl(oldIdx);
+        const [box, line] = el?.children();
+
         if (!data.hasValue(newIdx)) {
           group.remove(el);
           return;
         }
+
         const itemLayout = data.getItemLayout(newIdx);
+
+        if (needsClip && isNormalBoxClipped(clipArea, itemLayout)) {
+          group.remove(el);
+          return;
+        }
+
         if (!el) {
           el = createNormalBox(itemLayout, newIdx);
         } else {
           graphic.updateProps(
-            el,
+            box,
             {
               shape: {
                 points: itemLayout.ends,
@@ -71,7 +161,36 @@ echarts.extendChartView({
             seriesModel,
             newIdx
           );
-          saveOldStyle(el);
+          if (line) {
+            graphic.updateProps(
+              line,
+              {
+                shape: {
+                  x1: itemLayout.ends[4][0],
+                  y1: itemLayout.ends[4][1],
+                  x2: itemLayout.ends[5][0],
+                  y2: itemLayout.ends[5][1],
+                },
+              },
+              seriesModel,
+              newIdx
+            );
+          }
+
+          const style = data.getItemVisual(newIdx, 'style');
+          const itemModel = data.getItemModel(newIdx);
+          const labelStatesModels = getLabelStatesModels(itemModel);
+
+          setLabelStyle(box, labelStatesModels, {
+            labelFetcher: seriesModel,
+            labelDataIndex: newIdx,
+            defaultText: getDefaultLabel(seriesModel.getData(), newIdx),
+            inheritColor: style.fill,
+            defaultOpacity: style.opacity,
+            defaultOutsidePosition: false,
+          });
+
+          box.useStyle(style);
         }
 
         setBoxCommon(el, data, newIdx, isSimpleBox);
@@ -83,6 +202,7 @@ echarts.extendChartView({
         el && group.remove(el);
       })
       .execute();
+
     this._data = data;
   },
 });
@@ -99,19 +219,12 @@ function isNormalBoxClipped(clipArea: any, itemLayout: any) {
   return clipped;
 }
 
-export function initProps(
-  el: any,
-  props: any,
-  animatableModel?: any,
-  dataIndex?: any,
-  cb?: any,
-  during?: any
-) {
-  animateOrSetProps("enter", el, props, animatableModel, dataIndex, cb, during);
+export function initProps(el: any, props: any, animatableModel?: any, dataIndex?: any, cb?: any, during?: any) {
+  animateOrSetProps('enter', el, props, animatableModel, dataIndex, cb, during);
 }
 
 function animateOrSetProps<Props>(
-  animationType: "enter" | "update" | "leave",
+  animationType: 'enter' | 'update' | 'leave',
   el: any,
   props: any,
   animatableModel?: any,
@@ -133,11 +246,11 @@ function animateOrSetProps<Props>(
     dataIndex = dataIndex.dataIndex;
   }
 
-  const isRemove = animationType === "leave";
+  const isRemove = animationType === 'leave';
 
   if (!isRemove) {
     // Must stop the remove animation.
-    el.stopAnimation("leave");
+    el.stopAnimation('leave');
   }
 
   const animationConfig = getAnimationConfig(
@@ -167,23 +280,22 @@ function animateOrSetProps<Props>(
       during: during,
     };
 
-    isFrom
-      ? el.animateFrom(props, animateConfig)
-      : el.animateTo(props, animateConfig);
+    isFrom ? el.animateFrom(props, animateConfig) : el.animateTo(props, animateConfig);
   } else {
     el.stopAnimation();
     // If `isFrom`, the props is the "from" props.
     !isFrom && el.attr(props);
     // Call during at least once.
     during && during(1);
-    cb && (cb as AnimateOrSetPropsOption["cb"])();
+    cb && (cb as AnimateOrSetPropsOption['cb'])();
   }
 }
 
-function createNormalBox(itemLayout, dataIndex, isInit) {
+function createNormalBox(itemLayout, dataIndex, isInit?) {
   const ends = itemLayout.ends;
   const res = new NormalBoxPath({
     shape: {
+      // points: ends,
       points: isInit ? transInit(ends, itemLayout) : ends,
     },
     z2: 100,
@@ -192,27 +304,42 @@ function createNormalBox(itemLayout, dataIndex, isInit) {
 }
 
 class NormalBoxPath extends Path<any> {
-  readonly type = "normalWaterfallBox";
-  shape;
-  __simpleBox: boolean;
+  readonly type = 'waterfallBar';
+  // public shape: object;
+
   constructor(opts?: any) {
     super(opts);
   }
+
   getDefaultShape() {
     return new NormalBoxPathShape();
   }
+
   buildPath(ctx, shape) {
     const ends = shape.points;
-    if (this.__simpleBox) {
-      ctx.moveTo(ends[4][0], ends[4][1]);
-      ctx.lineTo(ends[6][0], ends[6][1]);
-    } else {
-      ctx.moveTo(ends[0][0], ends[0][1]);
-      ctx.lineTo(ends[1][0], ends[1][1]);
-      ctx.lineTo(ends[2][0], ends[2][1]);
-      ctx.lineTo(ends[3][0], ends[3][1]);
-      ctx.closePath();
-    }
+    ctx.moveTo(ends[0][0], ends[0][1]);
+    ctx.lineTo(ends[1][0], ends[1][1]);
+    ctx.lineTo(ends[2][0], ends[2][1]);
+    ctx.lineTo(ends[3][0], ends[3][1]);
+    ctx.closePath();
+  }
+}
+
+class BBBPath extends Path<any> {
+  readonly type = 'waterfallLine';
+
+  constructor(opts?: any) {
+    super(opts);
+  }
+
+  getDefaultShape() {
+    return new NormalBoxPathShape();
+  }
+
+  buildPath(ctx, shape) {
+    const ends = shape.points;
+    ctx.moveTo(ends[4][0], ends[4][1]);
+    ctx.lineTo(ends[5][0], ends[5][1]);
   }
 }
 
@@ -229,37 +356,34 @@ function transInit(points: number[][], itemLayout) {
 }
 
 function setBoxCommon(el, data, dataIndex: number, isSimpleBox?: boolean) {
-  const itemModel = data.getItemModel(dataIndex);
-  const visual = data.getItemVisual(dataIndex, "style");
-  el.useStyle(visual);
-  el.style.strokeNoScale = true;
-  el.__simpleBox = isSimpleBox;
-  setStatesStylesFromModel(el, itemModel);
+  // const itemModel = data.getItemModel(dataIndex);
+  // el.style.strokeNoScale = true;
+  // el.__simpleBox = isSimpleBox;
+  // const sign = data.getItemLayout(dataIndex).sign;
+  // zrUtil.each(el.states, (state: any, stateName) => {
+  //   const stateModel = itemModel.getModel(stateName as any);
+  //   const color = getColor(sign, stateModel);
+  //   const stateStyle = state.style || (state.style = {});
+  //   color && (stateStyle.fill = color);
+  // });
+  // setStatesStylesFromModel(el, itemModel);
 }
 
-const OTHER_STATES = ["emphasis", "blur", "select"];
+const OTHER_STATES = ['emphasis', 'blur', 'select'];
 const defaultStyleGetterMap: any = {
-  itemStyle: "getItemStyle",
-  lineStyle: "getLineStyle",
-  areaStyle: "getAreaStyle",
+  itemStyle: 'getItemStyle',
+  lineStyle: 'getLineStyle',
+  areaStyle: 'getAreaStyle',
 };
-export function setStatesStylesFromModel(
-  el,
-  itemModel,
-  styleType?: string,
-  getter?: (model) => any
-) {
-  styleType = styleType || "itemStyle";
+export function setStatesStylesFromModel(el, itemModel, styleType?: string, getter?: (model) => any) {
+  styleType = styleType || 'itemStyle';
   for (let i = 0; i < OTHER_STATES.length; i++) {
     const stateName = OTHER_STATES[i];
     const model = itemModel.getModel([stateName, styleType]);
     const state = el.ensureState(stateName);
-    state.style = getter
-      ? getter(model)
-      : model[defaultStyleGetterMap[styleType]]();
+    state.style = getter ? getter(model) : model[defaultStyleGetterMap[styleType]]();
   }
 }
-
 
 const innerUniqueIndex = getRandomIdBase();
 function saveOldStyle(el) {
@@ -278,3 +402,5 @@ function makeInner() {
     return hostObj[key] || (hostObj[key] = {});
   };
 }
+
+export default WaterfallView;

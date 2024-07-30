@@ -1,7 +1,11 @@
 {
-  "name": "echarts-experiments",
+  "name": "echarts-waterfall",
+  "description": "Waterfall extension for Echarts",
+  "main": "src/waterfall/index.js",
+    "author": "Sofya Shakirova",
+  "license": "ISC",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,5 +19,9 @@
   "dependencies": {
     "echarts": "^5.5.1",
     "zrender": "^5.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gito.luxms.com/sshakirova/test-echarts"
   }
 }

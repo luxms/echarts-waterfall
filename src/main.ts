@@ -1,14 +1,16 @@
-import * as echarts from "echarts";
-import "./waterfall";
-import "./style.css";
+import * as echarts from 'echarts';
+import WaterfallChart from './waterfall';
+import './style.css';
 
-const chart = echarts.init(document.getElementById("main"), null, {
-  renderer: "svg",
+echarts.use(WaterfallChart);
+
+const chart = echarts.init(document.getElementById('main'), null, {
+  renderer: 'svg',
 });
 chart.setOption({
   xAxis: {
-    data: ["2017-10-24", "2017-10-25", "2017-10-26", "2017-10-27", "2017-10-28"],
-    axisLine: { onZero: false }
+    data: ['2017-10-24', '2017-10-25', '2017-10-26', '2017-10-27', '2017-10-28'],
+    axisLine: { onZero: false },
   },
   yAxis: {
     // startValue: -40
@@ -17,11 +19,11 @@ chart.setOption({
   series: [
     {
       clip: false,
-      type: "waterfall",
+      type: 'waterfall',
       itemStyle: {
-        color: "#47b262",
-        color0: "#eb5454",
-        color1: "#219ebc",
+        color: '#47b262',
+        color0: '#eb5454',
+        color1: '#219ebc',
       },
       data: [
         { value: [0, 34], itemStyle: { color: null }, isSubtotal: true },
@@ -40,17 +42,17 @@ chart.setOption({
   ],
 });
 
-const exampleChart = echarts.init(document.getElementById("example"), null, {
-  renderer: "svg",
+const exampleChart = echarts.init(document.getElementById('example'), null, {
+  renderer: 'svg',
 });
 exampleChart.setOption({
   xAxis: {
-    data: ["2017-10-24", "2017-10-25", "2017-10-26", "2017-10-27"],
+    data: ['2017-10-24', '2017-10-25', '2017-10-26', '2017-10-27'],
   },
   yAxis: {},
   series: [
     {
-      type: "candlestick",
+      type: 'candlestick',
       data: [
         [20, 34, 10, 38],
         [40, 35, 30, 50],

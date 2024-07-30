@@ -1,109 +1,109 @@
-// @ts-ignore
-import * as echarts from "echarts/lib/echarts";
-// @ts-ignore
-import * as zrUtil from "zrender/src/core/util";
-// @ts-ignore
-import { map, retrieve2 } from "zrender/src/core/util";
-// @ts-ignore
-import * as subPixelOptimizeUtil from "zrender/src/graphic/helper/subPixelOptimize";
+// @ts-nocheck
+import * as zrUtil from 'zrender/lib/core/util';
+import { map, retrieve2 } from 'zrender/lib/core/util';
+import { subPixelOptimize } from 'zrender/lib/graphic/helper/subPixelOptimize';
 
-// @ts-ignore
-echarts.registerLayout(function (ecModel, api) {
-  // @ts-ignore
-  ecModel.eachSeriesByType("waterfall", function (seriesModel) {
+function WaterfallLayout(ecModel) {
+  ecModel.eachSeriesByType('waterfall', function (seriesModel) {
     const coordSys = seriesModel.coordinateSystem;
+    const baseAxis = seriesModel.getBaseAxis();
+    const valueAxis = coordSys.getOtherAxis(baseAxis);
+    let startValue = seriesModel.get('startValue');
+
+    if (startValue) {
+      valueAxis.scale.unionExtent([startValue, startValue]);
+      valueAxis.scale.calcNiceTicks();
+    } else {
+      startValue = valueAxis.scale._extent[0];
+    }
+
     const data = seriesModel.getData();
-    const candleWidth = calculateCandleWidth(seriesModel, data);
+    const barWidth = calculateBarWidth(seriesModel, data);
     const cDimIdx = 0;
     const vDimIdx = 1;
-    const coordDims = ["x", "y"];
+    const coordDims = ['x', 'y'];
     const cDimI = data.getDimensionIndex(data.mapDimension(coordDims[cDimIdx]));
-    const vDimsI = map(
-      data.mapDimensionsAll(coordDims[vDimIdx]),
-      data.getDimensionIndex,
-      data
-    );
-    const openDimI = vDimsI[0];
-    const closeDimI = vDimsI[1];
+    const vDimsI = map(data.mapDimensionsAll(coordDims[vDimIdx]), data.getDimensionIndex, data);
+    const startDimI = vDimsI[0]; // индекс начала столбика
+    const endDimI = vDimsI[1]; // индекс конца столбика
 
-    data.setLayout({
-      candleWidth: candleWidth,
-      isSimpleBox: candleWidth <= 1.3,
-    });
+    data.setLayout({ barWidth: barWidth });
 
+    // проверка, что value состоит из двух значний: начало и конец столбика
     if (cDimI < 0 || vDimsI.length < 2) return;
 
+    // todo добавить оптимизированный large рендер
     seriesModel.pipelineContext.large ? null : normalProgress();
 
-    
     function normalProgress() {
       const store = data.getStore();
       data.each((idx: number) => {
-        const axisDimVal = store.get(cDimI, idx);
-        const openVal = store.get(openDimI, idx);
-        const closeVal = store.get(closeDimI, idx);
-        const ocLow = Math.min(openVal, closeVal);
-        const ocHigh = Math.max(openVal, closeVal);
-        const ocLowPoint = getPoint(ocLow, axisDimVal);
-        const ocHighPoint = getPoint(ocHigh, axisDimVal);
+        const axisDimVal = store.get(cDimI, idx); // индекс столбика
+        const startVal = store.get(startDimI, idx); // значение начала стобика
+        const endVal = store.get(endDimI, idx); // значение конца стобика
+        const ocLow = Math.min(startVal, endVal); // меньшее значение
+        const ocHigh = Math.max(startVal, endVal); // большее значение
+        const ocLowPoint = getPoint(ocLow, axisDimVal); // x - центр столбика, y - нижнее значение
+        const ocHighPoint = getPoint(ocHigh, axisDimVal); // x - центр столбика, y - верхнее значение
         const ends: any[] = [];
-        addBodyEnd(ends, ocHighPoint, 0);
-        addBodyEnd(ends, ocLowPoint, 1);
-        ends.push(
-          subPixelOptimizePoint(ocHighPoint),
-          subPixelOptimizePoint(ocLowPoint)
-        );
+
+        const nextIds = idx + 1;
+        const nextAxisDimVal = store.get(cDimI, nextIds);
+        const nextStartVal = store.get(startDimI, nextIds);
+        const nextEndVal = store.get(endDimI, nextIds);
+        const nextOcHigh = Math.max(nextStartVal, nextEndVal);
+        const nextOcHighPoint = getPoint(nextOcHigh, nextAxisDimVal);
+
+        const heightDiff = ocHighPoint[1] - ocLowPoint[1];
+        if (heightDiff < 2) {
+          ocHighPoint[1] += 1;
+          ocLowPoint[1] -= 1;
+        }
+
+        const [hightPoint1, hightPoint2] = addBodyEnd(ocHighPoint, 0);
+        const [lowPoint1, lowPoint2] = addBodyEnd(ocLowPoint, 1);
+
+        const [nextHightPoint1] = addBodyEnd(nextOcHighPoint, 0);
+
+        ends.push(hightPoint1, hightPoint2, lowPoint1, lowPoint2);
+
+        const lineStartPoint = startVal > endVal ? lowPoint1 : hightPoint2;
+        const lineEndPoint = [nextHightPoint1[0], lineStartPoint[1]];
+
+        ends.push(lineStartPoint, lineEndPoint);
         const itemModel = data.getItemModel(idx);
-        const hasDojiColor = !!itemModel.get(["itemStyle", "borderColorDoji"]);
+        const hasDojiColor = !!itemModel.get(['itemStyle', 'borderColorDoji']);
+
         data.setItemLayout(idx, {
-          sign: getSign(
-            store,
-            idx,
-            openVal,
-            closeVal,
-            closeDimI,
-            hasDojiColor
-          ),
-          initBaseline:
-            openVal > closeVal ? ocHighPoint[vDimIdx] : ocLowPoint[vDimIdx],
+          sign: getSign(store, idx, startVal, endVal, endDimI, hasDojiColor),
+          initBaseline: startVal > endVal ? ocHighPoint[vDimIdx] : ocLowPoint[vDimIdx],
           ends: ends,
           brushRect: makeBrushRect(ocLow, ocHigh, axisDimVal),
         });
-      })
-
+      });
       function getPoint(val: any, axisDimVal: any) {
-        var p = [];
-        p[cDimIdx] = axisDimVal;
-        p[vDimIdx] = val;
-        return isNaN(axisDimVal) || isNaN(val)
-          ? [NaN, NaN]
-          : coordSys.dataToPoint(p);
+        const p = [];
+        p[cDimIdx] = axisDimVal; // 0
+        p[vDimIdx] = val; // 0
+        return isNaN(axisDimVal) || isNaN(val) ? [NaN, NaN] : coordSys.dataToPoint(p);
       }
-      function addBodyEnd(ends: any, point: any, start: any) {
-        var point1 = point.slice();
-        var point2 = point.slice();
-        point1[cDimIdx] = subPixelOptimize(
-          point1[cDimIdx] + candleWidth / 2,
-          1,
-          false
-        );
-        point2[cDimIdx] = subPixelOptimize(
-          point2[cDimIdx] - candleWidth / 2,
-          1,
-          true
-        );
-        start ? ends.push(point1, point2) : ends.push(point2, point1);
+      function addBodyEnd(point: any, start: any) {
+        const point1 = point.slice();
+        const point2 = point.slice();
+        point1[cDimIdx] = subPixelOptimize(point1[cDimIdx] + barWidth / 2, 1, false);
+        point2[cDimIdx] = subPixelOptimize(point2[cDimIdx] - barWidth / 2, 1, true);
+        return start ? [point1, point2] : [point2, point1];
       }
       function makeBrushRect(lowestVal: any, highestVal: any, axisDimVal: any) {
         var pmin = getPoint(lowestVal, axisDimVal);
         var pmax = getPoint(highestVal, axisDimVal);
-        pmin[cDimIdx] -= candleWidth / 2;
-        pmax[cDimIdx] -= candleWidth / 2;
+        pmin[cDimIdx] -= barWidth / 2;
+        pmax[cDimIdx] -= barWidth / 2;
         return {
           x: pmin[0],
           y: pmin[1],
-          width: vDimIdx ? candleWidth : pmax[0] - pmin[0],
-          height: vDimIdx ? pmax[1] - pmin[1] : candleWidth,
+          width: vDimIdx ? barWidth : pmax[0] - pmin[0],
+          height: vDimIdx ? pmax[1] - pmin[1] : barWidth,
         };
       }
       function subPixelOptimizePoint(point: number[]) {
@@ -112,9 +112,17 @@ echarts.registerLayout(function (ecModel, api) {
       }
     }
   });
-});
+}
 
-const subPixelOptimize = subPixelOptimizeUtil.subPixelOptimize;
+const getValueAxisStart = (baseAxis: any, valueAxis: any) => {
+  let startValue = valueAxis.model.get('startValue');
+  if (!startValue) {
+    startValue = 0;
+  }
+  return valueAxis.toGlobalCoord(
+    valueAxis.dataToCoord(valueAxis.type === 'log' ? (startValue > 0 ? startValue : 1) : startValue)
+  );
+};
 
 /**
  * Get the sign of a single data.
@@ -124,11 +132,11 @@ const subPixelOptimize = subPixelOptimizeUtil.subPixelOptimize;
  *          -1 for negative.
  */
 // @ts-ignore
-function getSign(store, dataIndex, openVal, closeVal, closeDimI, hasDojiColor) {
+function getSign(store, dataIndex, startVal, endVal, closeDimI, hasDojiColor) {
   var sign;
-  if (openVal > closeVal) {
+  if (startVal > endVal) {
     sign = -1;
-  } else if (openVal < closeVal) {
+  } else if (startVal < endVal) {
     sign = 1;
   } else {
     sign = hasDojiColor
@@ -136,7 +144,7 @@ function getSign(store, dataIndex, openVal, closeVal, closeDimI, hasDojiColor) {
         0
       : dataIndex > 0
       ? // If close === open, compare with close of last record
-        store.get(closeDimI, dataIndex - 1) <= closeVal
+        store.get(closeDimI, dataIndex - 1) <= endVal
         ? 1
         : -1
       : // No record of previous, set to be positive
@@ -144,43 +152,36 @@ function getSign(store, dataIndex, openVal, closeVal, closeDimI, hasDojiColor) {
   }
   return sign;
 }
-// @ts-ignore
-function calculateCandleWidth(seriesModel, data) {
+
+function calculateBarWidth(seriesModel, data) {
   var baseAxis = seriesModel.getBaseAxis();
   var extent;
   var bandWidth =
-    baseAxis.type === "category"
+    baseAxis.type === 'category'
       ? baseAxis.getBandWidth()
-      : ((extent = baseAxis.getExtent()),
-        Math.abs(extent[1] - extent[0]) / data.count());
-  var barMaxWidth = parsePercent(
-    retrieve2(seriesModel.get("barMaxWidth"), bandWidth),
-    bandWidth
-  );
-  var barMinWidth = parsePercent(
-    retrieve2(seriesModel.get("barMinWidth"), 1),
-    bandWidth
-  );
-  var barWidth = seriesModel.get("barWidth");
+      : ((extent = baseAxis.getExtent()), Math.abs(extent[1] - extent[0]) / data.count());
+  var barMaxWidth = parsePercent(retrieve2(seriesModel.get('barMaxWidth'), bandWidth), bandWidth);
+  var barMinWidth = parsePercent(retrieve2(seriesModel.get('barMinWidth'), 1), bandWidth);
+  var barWidth = seriesModel.get('barWidth');
   return barWidth != null
     ? parsePercent(barWidth, bandWidth)
     : // Put max outer to ensure bar visible in spite of overlap.
       Math.max(Math.min(bandWidth / 2, barMaxWidth), barMinWidth);
 }
 
-export function parsePercent(percent: number | string, all: number): number {
+function parsePercent(percent: number | string, all: number): number {
   switch (percent) {
-    case "center":
-    case "middle":
-      percent = "50%";
+    case 'center':
+    case 'middle':
+      percent = '50%';
       break;
-    case "left":
-    case "top":
-      percent = "0%";
+    case 'left':
+    case 'top':
+      percent = '0%';
       break;
-    case "right":
-    case "bottom":
-      percent = "100%";
+    case 'right':
+    case 'bottom':
+      percent = '100%';
       break;
   }
   if (zrUtil.isString(percent)) {
@@ -193,13 +194,9 @@ export function parsePercent(percent: number | string, all: number): number {
 
   return percent == null ? NaN : +percent;
 }
+
 function _trim(str: string): string {
-  return str.replace(/^\s+|\s+$/g, "");
+  return str.replace(/^\s+|\s+$/g, '');
 }
 
-// Просто посмотреть, что внутри candlestick
-echarts.registerLayout(function (ecModel, api) {
-  ecModel.eachSeriesByType("candlestick", function (seriesModel) {
-    console.log("candlestick", seriesModel, ecModel);
-  });
-});
+export default WaterfallLayout;

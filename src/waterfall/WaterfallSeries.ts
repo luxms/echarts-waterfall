@@ -1,42 +1,49 @@
 // @ts-nocheck
-import * as echarts from "echarts/lib/echarts";
-import { WhiskerBoxCommonMixin } from "echarts/lib/chart/helper/whiskerBoxCommon.js";
-import * as zrUtil from "zrender/lib/core/util";
+import { WhiskerBoxCommonMixin } from 'echarts/lib/chart/helper/whiskerBoxCommon';
+import { SeriesModel, helper, List } from 'echarts/lib/echarts';
+import { mixin } from 'zrender/lib/core/util';
 
-const WaterfallSeries = echarts.extendSeriesModel({
-  type: "series.waterfall",
+interface IWaterfallOption {
+  itemStyle: {
+    colorPositive: string;
+    colorNegative: string;
+    colorSubtotal: string;
+  };
+  isSubtotal: boolean;
+  //label: SeriesLabelOption;
+}
 
-  optionUpdated: function () {
-    const option = this.option;
-    option.gridSize = Math.max(Math.floor(option.gridSize), 4);
-  },
+const WaterfallSeries = SeriesModel.extend({
+  type: 'series.waterfall',
 
-  getInitialData: function (option, ecModel) {
-    const dimensions = echarts.helper.createDimensions(option.data, {
+  getInitialData: function (option) {
+    const dimensions = helper.createDimensions(option.data, {
       coordDimensions: this.defaultValueDimensions,
     });
-    const list = new echarts.List(dimensions, this);
+    const list = new List(dimensions, this);
     list.initData(option.data);
     return list;
   },
 
   defaultValueDimensions: [
-    { name: "open", defaultTooltip: true },
-    { name: "close", defaultTooltip: true },
+    { name: 'start', defaultTooltip: true },
+    { name: 'end', defaultTooltip: true },
   ],
 
   defaultOption: {
+    itemStyle: {
+      colorPositive: 'green',
+      colorNegative: 'red',
+      colorSubtotal: 'blue',
+    },
+    isSubtotal: false,
+    label: { show: false },
+    septum: { show: false },
     z: 2,
-    coordinateSystem: "cartesian2d",
+    coordinateSystem: 'cartesian2d',
     legendHoverLink: true,
     layout: null,
     clip: true,
-    itemStyle: {
-      color: "green",
-      color0: "red",
-      color1: "blue",
-      borderWidth: 1,
-    },
     emphasis: {
       scale: true,
       itemStyle: {
@@ -50,10 +57,12 @@ const WaterfallSeries = echarts.extendSeriesModel({
     largeThreshold: 600,
     progressive: 3e3,
     progressiveThreshold: 1e4,
-    progressiveChunkMode: "mod",
-    animationEasing: "linear",
+    progressiveChunkMode: 'mod',
+    animationEasing: 'linear',
     animationDuration: 300,
   },
 });
 
-zrUtil.mixin(WaterfallSeries, WhiskerBoxCommonMixin, true);
+mixin(WaterfallSeries, WhiskerBoxCommonMixin, true);
+
+export default WaterfallSeries;

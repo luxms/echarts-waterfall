@@ -1,27 +1,23 @@
-// @ts-ignore
-import * as echarts from "echarts/lib/echarts";
-import { extend } from "zrender/lib/core/util.js";
+// @ts-nocheck
+import { extend } from 'zrender/lib/core/util.js';
 
-const positiveColorQuery = ["itemStyle", "color"];
-const negativeColorQuery = ["itemStyle", "color0"];
-const subtotalColorQuery = ["itemStyle", "color1"];
+const positiveColorQuery = ['itemStyle', 'colorPositive'];
+const negativeColorQuery = ['itemStyle', 'colorNegative'];
+const subtotalColorQuery = ['itemStyle', 'colorSubtotal'];
 
-// @ts-ignore
-function createWaterfallVisual(ecModel, api) {
-  // @ts-ignore
-  ecModel.eachSeriesByType("waterfall", function (seriesModel) {
+function WaterfallVisual(ecModel) {
+  ecModel.eachSeriesByType('waterfall', function (seriesModel) {
     const data = seriesModel.getData();
     const isLargeRender = seriesModel.pipelineContext.large;
-    data.setVisual({
-      legendSymbol: "roundRect",
-      colorP: getColor(1, seriesModel),
-      colorN: getColor(-1, seriesModel),
-      colorS: getColor(0, seriesModel),
-    }); // Only visible series has each data be visual encoded
 
-    if (ecModel.isSeriesFiltered(seriesModel)) {
-      return;
-    }
+    data.setVisual({
+      legendSymbol: 'roundRect',
+      colorPositive: getColor(1, seriesModel),
+      colorNegative: getColor(-1, seriesModel),
+      colorSubtotal: getColor(0, seriesModel),
+    });
+
+    if (ecModel.isSeriesFiltered(seriesModel)) return;
 
     !isLargeRender && progress();
 
@@ -31,21 +27,19 @@ function createWaterfallVisual(ecModel, api) {
         const isSubtotal = itemModel.option.isSubtotal;
         const sign = data.getItemLayout(idx).sign;
         const style = itemModel.getItemStyle();
-        style.fill = getColor(isSubtotal ? 0 : sign, itemModel);
-        const existsStyle = data.ensureUniqueItemVisual(idx, "style");
+        const color = getColor(isSubtotal ? 0 : sign, itemModel);
+        style.fill = color;
+        const existsStyle = data.ensureUniqueItemVisual(idx, 'style');
         extend(existsStyle, style);
-      })
-    }
-
-    // @ts-ignore
-    function getColor(sign, model) {
-      if (sign === 0) return model.get(subtotalColorQuery)
-      return model.get(sign > 0 ? positiveColorQuery : negativeColorQuery);
+      });
     }
   });
 }
 
-echarts.registerVisual(
-  echarts.PRIORITY.VISUAL.CHART + 1,
-  createWaterfallVisual
-);
+export function getColor(sign, model) {
+  if (sign === 0) return model.get(subtotalColorQuery);
+  const res = model.get(sign > 0 ? positiveColorQuery : negativeColorQuery);
+  return res;
+}
+
+export default WaterfallVisual;
