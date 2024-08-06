@@ -5,14 +5,13 @@
   "main": "dist/echarts-waterfall.min.js",
   "author": "Sofya Shakirova",
   "license": "ISC",
+  "keywords": [
+    "echarts"
+  ],
   "scripts": {
     "dev": "npx webpack --mode development --watch",
     "build": "npx webpack --mode development",
     "release": "npx webpack --mode production && npx webpack --mode development"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://download.luxms.com/repository/npm-luxms/"
   },
   "peerDependencies": {
     "echarts": "^5.5.1",
@@ -26,6 +25,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://gito.luxms.com/sshakirova/test-echarts"
+    "url": "https://github.com/luxms/echarts-waterfall"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://download.luxms.com/repository/npm-luxms/"
   }
 }
