@@ -1,8 +1,8 @@
 # echarts-waterfall
 
-Third-party Waterfall extension for [Apache ECharts](https://github.com/apache/echarts)
+Third-party Waterfall extension for [Apache ECharts](https://github.com/apache/echarts).
 
-![](./doc/waterfall.png)
+![Waterfall chart example](./doc/waterfall.png)
 
 ## Install
 
@@ -43,11 +43,25 @@ chart.setOption({
       { value: [42, 0], isSubtotal: true },
     ],
   },
-  septum: { show: true }
 });
 ```
 
-## Options
+## Series options
+
+Only chart-speciefic options are listed, but most of [common echarts options](https://echarts.apache.org/en/option.html) are working as well.
+
+| Option                    | Type               | Defalut value | Note                            |
+| ------------------------- | ------------------ | ------------- | ------------------------------- |
+| `itemStyle`               | `Object`           |               | Bars common styles              |
+| `itemStyle.colorPositive` | `string`           | `#47b262`     |                                 |
+| `itemStyle.colorNegative` | `string`           | `#e63946`     |                                 |
+| `itemStyle.colorSubtotal` | `string`           | `#8d99ae`     |                                 |
+| `septum`                  | `Object`           |               | Bars connecting lines           |
+| `septum.show`             | `boolean`          | `true`        |                                 |
+| `data`                    | `Array<dataItem>`  |               |                                 |
+| `dataItem`                | `Object`           |               |                                 |
+| `dataItem.value`          | `[number, number]` |               | Start and end values of the bar |
+| `dataItem.isSubtotal`     | `boolean`          | `false`       | If the bar is subtotal          |
 
 ## Note on local testing
 

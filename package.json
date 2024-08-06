@@ -5,6 +5,9 @@
   "main": "dist/echarts-waterfall.min.js",
   "author": "Sofya Shakirova",
   "license": "ISC",
+  "keywords": [
+    "echarts"
+  ],
   "scripts": {
     "dev": "npx webpack --mode development --watch",
     "build": "npx webpack --mode development",

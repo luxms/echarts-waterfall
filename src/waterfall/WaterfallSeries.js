@@ -21,13 +21,13 @@ const WaterfallSeries = SeriesModel.extend({
 
   defaultOption: {
     itemStyle: {
-      colorPositive: 'green',
-      colorNegative: 'red',
-      colorSubtotal: 'blue',
+      colorPositive: '#47b262',
+      colorNegative: '#e63946',
+      colorSubtotal: '#8d99ae',
     },
     isSubtotal: false,
     label: { show: false },
-    septum: { show: false },
+    septum: { show: true },
     z: 2,
     coordinateSystem: 'cartesian2d',
     legendHoverLink: true,
