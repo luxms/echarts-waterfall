@@ -1,6 +1,6 @@
 {
   "name": "@luxms/echarts-waterfall",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Waterfall extension for Echarts",
   "main": "dist/echarts-waterfall.min.js",
   "author": "Sofya Shakirova",
@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "npx webpack --mode development --watch",
-    "build": "npx webpack --mode development",
+    "build": "npx webpack --mode production",
     "release": "npx webpack --mode production && npx webpack --mode development"
   },
   "peerDependencies": {
